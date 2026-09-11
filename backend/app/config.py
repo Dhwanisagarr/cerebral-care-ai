@@ -17,6 +17,12 @@ def _resolve_speech_model_path() -> str:
 def _resolve_pain_model_path() -> str:
     if os.getenv("PAIN_MODEL_PATH"):
         return os.getenv("PAIN_MODEL_PATH")
+    p_onnx1 = ROOT_DIR / "ml" / "saved_models" / "pain_inception.onnx"
+    if p_onnx1.exists():
+        return str(p_onnx1)
+    p_onnx2 = BASE_DIR / "ml" / "saved_models" / "pain_inception.onnx"
+    if p_onnx2.exists():
+        return str(p_onnx2)
     p1 = ROOT_DIR / "ml" / "saved_models" / "pain_inception.keras"
     if p1.exists():
         return str(p1)

@@ -6,7 +6,11 @@ from app.config import settings
 class PainInceptionModel:
     def __init__(self):
         self.model = None
+        self.ort_session = None
+        self.input_name = None
+        self.output_name = None
         self.is_loaded = False
+        self.is_onnx = False
         self._attempted_load = False
 
     @property
@@ -15,29 +19,42 @@ class PainInceptionModel:
         return self.is_loaded or os.path.exists(settings.PAIN_MODEL_PATH)
 
     def _ensure_loaded(self):
-        """Lazy loads TensorFlow and the Keras InceptionV3 model on first demand."""
+        """Lazy loads ONNX runtime or TensorFlow model on first demand."""
         if self._attempted_load:
             return
 
         self._attempted_load = True
-        if os.path.exists(settings.PAIN_MODEL_PATH):
+        model_path = settings.PAIN_MODEL_PATH
+        if os.path.exists(model_path):
             try:
-                os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-                os.environ["MKL_NUM_THREADS"] = "1"
-                os.environ["OMP_NUM_THREADS"] = "1"
-                import tensorflow as tf
-                try:
-                    tf.config.set_visible_devices([], 'GPU')
-                except Exception:
-                    pass
-                self.model = tf.keras.models.load_model(settings.PAIN_MODEL_PATH)
-                self.is_loaded = True
-                print(f"[INFO] Lazy-loaded Pain InceptionV3 model from {settings.PAIN_MODEL_PATH}")
+                if model_path.endswith(".onnx"):
+                    import onnxruntime as ort
+                    options = ort.SessionOptions()
+                    options.intra_op_num_threads = 1
+                    options.inter_op_num_threads = 1
+                    self.ort_session = ort.InferenceSession(model_path, options, providers=["CPUExecutionProvider"])
+                    self.input_name = self.ort_session.get_inputs()[0].name
+                    self.output_name = self.ort_session.get_outputs()[0].name
+                    self.is_onnx = True
+                    self.is_loaded = True
+                    print(f"[INFO] Lazy-loaded Pain InceptionV3 ONNX model from {model_path}")
+                else:
+                    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+                    os.environ["MKL_NUM_THREADS"] = "1"
+                    os.environ["OMP_NUM_THREADS"] = "1"
+                    import tensorflow as tf
+                    try:
+                        tf.config.set_visible_devices([], 'GPU')
+                    except Exception:
+                        pass
+                    self.model = tf.keras.models.load_model(model_path)
+                    self.is_loaded = True
+                    print(f"[INFO] Lazy-loaded Pain InceptionV3 Keras model from {model_path}")
             except Exception as e:
-                print(f"[WARN] Failed to load Pain InceptionV3 model: {e}. Operating in heuristic mode.")
+                print(f"[WARN] Failed to load Pain InceptionV3 model from {model_path}: {e}. Operating in heuristic mode.")
                 self.is_loaded = False
         else:
-            print(f"[INFO] Pain model file not found at {settings.PAIN_MODEL_PATH}. Operating in heuristic mode.")
+            print(f"[INFO] Pain model file not found at {model_path}. Operating in heuristic mode.")
             self.is_loaded = False
 
     def predict(self, image_tensor: np.ndarray, facial_metrics: Dict[str, Any]) -> Tuple[str, str, float, str, Dict[str, float], Dict[str, Any], bool]:
@@ -56,10 +73,15 @@ class PainInceptionModel:
         mouth_arc = str(facial_metrics.get("mouth_arc_direction", ""))
 
         nn_prob = 0.5
-        if self.is_loaded and self.model is not None:
+        if self.is_loaded:
             try:
-                prediction = self.model.predict(image_tensor, verbose=0)
-                nn_prob = float(prediction[0][0])
+                if self.is_onnx and self.ort_session is not None:
+                    ort_inputs = {self.input_name: image_tensor.astype(np.float32)}
+                    prediction = self.ort_session.run([self.output_name], ort_inputs)[0]
+                    nn_prob = float(prediction[0][0])
+                elif self.model is not None:
+                    prediction = self.model.predict(image_tensor, verbose=0)
+                    nn_prob = float(prediction[0][0])
             except Exception as e:
                 print(f"[WARN] Neural network prediction pass error: {e}")
 
