@@ -12,7 +12,7 @@ export default function HomePage() {
         </span>
         
         <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
-          Assistive AI for Speech & Pain Detection
+          Cerebral Care AI — Speech & Pain Analysis
         </h1>
         
         <p className="text-lg sm:text-xl text-slate-600 font-normal leading-relaxed">

@@ -5,8 +5,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Assistive AI for Speech & Pain Detection | Cerebral Palsy Assistive Tech",
-  description: "AI-assisted speech clarity assessment and facial image pain indicator analysis for individuals with cerebral palsy.",
+  title: "Cerebral Care AI | Assistive Speech & Pain Indicator Analysis",
+  description: "Cerebral Care AI is an AI-based assistive application for speech clarity analysis and facial pain indicator detection for individuals with cerebral palsy.",
 };
 
 export default function RootLayout({

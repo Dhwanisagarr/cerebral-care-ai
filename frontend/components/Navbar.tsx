@@ -25,7 +25,7 @@ export default function Navbar() {
             AI
           </span>
           <div className="flex flex-col">
-            <span className="leading-tight">Assistive AI</span>
+            <span className="leading-tight">Cerebral Care AI</span>
             <span className="text-xs text-slate-500 font-normal">Speech & Pain Analysis</span>
           </div>
         </Link>
