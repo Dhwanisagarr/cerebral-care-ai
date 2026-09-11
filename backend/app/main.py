@@ -41,7 +41,7 @@ class HealthResponse(BaseModel):
 @app.get("/api/health", response_model=HealthResponse)
 def health_check():
     speech_loaded = speech_knn_instance.is_loaded
-    pain_loaded = pain_inception_instance.is_loaded
+    pain_loaded = pain_inception_instance.is_available
     return HealthResponse(
         status="online",
         speech_model_loaded=speech_loaded,

@@ -7,20 +7,37 @@ class PainInceptionModel:
     def __init__(self):
         self.model = None
         self.is_loaded = False
-        self._load_model()
+        self._attempted_load = False
 
-    def _load_model(self):
+    @property
+    def is_available(self) -> bool:
+        """Returns True if the pain model file exists or if it has been loaded."""
+        return self.is_loaded or os.path.exists(settings.PAIN_MODEL_PATH)
+
+    def _ensure_loaded(self):
+        """Lazy loads TensorFlow and the Keras InceptionV3 model on first demand."""
+        if self._attempted_load:
+            return
+
+        self._attempted_load = True
         if os.path.exists(settings.PAIN_MODEL_PATH):
             try:
+                os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+                os.environ["MKL_NUM_THREADS"] = "1"
+                os.environ["OMP_NUM_THREADS"] = "1"
                 import tensorflow as tf
+                try:
+                    tf.config.set_visible_devices([], 'GPU')
+                except Exception:
+                    pass
                 self.model = tf.keras.models.load_model(settings.PAIN_MODEL_PATH)
                 self.is_loaded = True
-                print(f"[INFO] Loaded Pain InceptionV3 model from {settings.PAIN_MODEL_PATH}")
+                print(f"[INFO] Lazy-loaded Pain InceptionV3 model from {settings.PAIN_MODEL_PATH}")
             except Exception as e:
-                print(f"[WARN] Failed to load Pain InceptionV3 model: {e}. Switching to DEMO MODE.")
+                print(f"[WARN] Failed to load Pain InceptionV3 model: {e}. Operating in heuristic mode.")
                 self.is_loaded = False
         else:
-            print(f"[INFO] Pain model file not found at {settings.PAIN_MODEL_PATH}. Operating in DEMO MODE.")
+            print(f"[INFO] Pain model file not found at {settings.PAIN_MODEL_PATH}. Operating in heuristic mode.")
             self.is_loaded = False
 
     def predict(self, image_tensor: np.ndarray, facial_metrics: Dict[str, Any]) -> Tuple[str, str, float, str, Dict[str, float], Dict[str, Any], bool]:
@@ -29,6 +46,7 @@ class PainInceptionModel:
         and outputs pain & distress indicators.
         Returns (result_phrase, detected_expression, pain_score_pct, intensity_level, emotion_probabilities, facial_metrics, is_demo_mode).
         """
+        self._ensure_loaded()
         smile_conf = float(facial_metrics.get("smile_confidence", 0.0))
         crying_conf = float(facial_metrics.get("crying_confidence", 0.0))
         disheartened_conf = float(facial_metrics.get("disheartened_confidence", 0.0))
