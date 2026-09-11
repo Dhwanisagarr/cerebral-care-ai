@@ -3,7 +3,7 @@ const getApiBaseUrl = (): string => {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '');
   }
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return 'https://cerebral-care-ai.onrender.com';
+    return ''; // Same-origin relative URL for unified Vercel deployment
   }
   return 'http://localhost:8000';
 };
