@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     DEBUG: bool = True
-    MAX_AUDIO_SIZE_MB: int = 10
-    MAX_IMAGE_SIZE_MB: int = 5
+    MAX_AUDIO_SIZE_MB: int = 4
+    MAX_IMAGE_SIZE_MB: int = 4
     SPEECH_MODEL_PATH: str = _resolve_speech_model_path()
     PAIN_MODEL_PATH: str = _resolve_pain_model_path()
     ALLOWED_AUDIO_EXTENSIONS: set = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".mp4"}

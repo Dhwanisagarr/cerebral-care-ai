@@ -1,26 +1,15 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": "ml/saved_models/**"
-      }
-    },
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/next"
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "ml/saved_models/**",
+      "memory": 1024,
+      "maxDuration": 60
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
+      "source": "/api/:path*",
+      "destination": "/api/index.py"
     }
   ]
 }
